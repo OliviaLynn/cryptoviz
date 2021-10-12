@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
 
-    <title>Blockchain</title>
+    <title>DIY Blockchain</title>
     <meta name="author" content="Olivia Lynn">
     <style>
         * {
@@ -13,7 +13,10 @@
             font-family: Open Sans, sans-serif;
             font-size: 32px;
         }
-
+html, body {
+  height: 100%;
+  margin: 0;
+}
         body {
             width: 800px;
             margin-top: 80px;
@@ -61,11 +64,38 @@
             margin-top: 4px;
             background: #dfdfdf;
             text-transform: uppercase;
-            font-size: 24=6px;
+            font-size: 26px;
             font-weight: 600;
             padding: 12px;
         }
-
+        
+        .wrapper {
+            min-height: 100%;
+            margin-bottom: -200px;
+        }
+        .footer, .push {
+            height: 200px;
+        }
+        
+        table#hashtable {
+        }
+        table#hashtable > thead > tr > th {
+            text-align: right;
+            font-size: 20px;
+        }
+        td.str, td.op {
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size: 22px; 
+            border: none; 
+        }
+        td.str {
+            background: #ccddff;
+        }
+        td.op {
+            font-weight: 600;
+            background: #ffffff;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
 
@@ -76,6 +106,7 @@
 </head>
 
 <body>
+    <div class="wrapper">
     <table class="objecttable">
         <thead>
             <tr>
@@ -99,8 +130,46 @@
     <form>
         <input type="button" id="submit" value="Create Block">
     </form>
+        <br>
+        <br>        <br>
 
+    <div class="push"></div>
+    </div>
+        
 
+  <footer class="footer">
+        <table id="hashtable">
+        <thead>
+            <tr>
+                <th></th>
+                <th>#</th>
+                <th></th>
+                <th>Timestamp</th>
+                <th></th>
+                <th>Data</th>
+                <th></th>
+                <th>Prev. Hash</th>
+                <th></th>
+                <th>Hash</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="op">SHA256 (</td>
+                <td class="str" id="h-index"></td>
+                <td class="op">+</td>
+                <td class="str" id="h-timestamp"></td>
+                <td class="op">+</td>
+                <td class="str" id="h-data"></td>
+                <td class="op">+</td>
+                <td class="str" id="h-previousHash"></td>
+                <td class="op">) =</td>
+                <td class="str" id="h-hash"></td>
+            </tr>
+        </tbody>
+    </table>
+    </footer>
+    
     <script>
         function generateChain() {
             let myCoin = new Blockchain();
@@ -125,14 +194,46 @@
             }
         }
         
-        var tr = d3.select(".objecttable tbody")
+        let selectedBlock = null;
+        function midTrunc(s) {
+            return s.slice(0,5) + "..." + s.slice(s.length-3);
+        }
+        function updateSelection() {
+            d3.select(".objecttable tbody")
+            .selectAll("tr")
+                .style("background", function(d) {
+                if (selectedBlock && selectedBlock.hash === d.hash) {
+                    return "#ffffaa";
+                }
+                else {
+                    return "#ffffff";
+                }
+            })
+            
+            //TODO redo this in a way more d3-ish way
+            $("td#h-index").text(selectedBlock.index);
+            $("td#h-timestamp").text(selectedBlock.timestamp);
+            $("td#h-data").text(selectedBlock.data);
+            $("td#h-previousHash").text(trunc(selectedBlock.previousHash,5));
+            $("td#h-hash").text(trunc(selectedBlock.hash, 5));
+        }
+        
+        function makeTable() {
+        let tr = d3.select(".objecttable tbody")
             .selectAll("tr")
             .data(myChain.chain, function(d) { return d.hash; })
-            .enter().append("tr");
-        var td = tr.selectAll("td")
+            .enter().append("tr")
+            .on("click", function(event, d) { 
+                //console.log(d); 
+                selectedBlock = d;
+                updateSelection();
+            });
+        let td = tr.selectAll("td")
             .data(function(d, i) { return Object.values(d); })
             .enter().append("td")
             .text(function(d) { return trunc(d); });
+        }
+        makeTable();
 
         let currentBlock = new Block(myChain.chain.length, "10/10/2021", Math.floor(Math.random()*100),
             myChain.getLatestBlock().hash);
@@ -172,19 +273,11 @@
         }
         $("input#submit").css("width", calcSubmitButtonWidth() + "px");
 
-
         $("input#submit").on('click', function() {
             myChain.addBlock(currentBlock);
             
             // Update table
-            let newTr = d3.select(".objecttable tbody")
-                .selectAll("tr")
-                .data(myChain.chain, function(d) { return d.hash; })
-                .enter().append("tr");
-            let newTd = newTr.selectAll("td")
-                .data(function(d, i) { return Object.values(d); })
-                .enter().append("td")
-                .text(function(d) { return trunc(d); });
+            makeTable();
             
             // Set up new block
             currentBlock = new Block(myChain.chain.length, "10/10/2021", Math.floor(Math.random()*100),
