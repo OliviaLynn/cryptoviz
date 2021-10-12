@@ -1,0 +1,197 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Blockchain</title>
+    <meta name="author" content="Olivia Lynn">
+    <style>
+        * {
+            margin: 0px;
+            font-family: Open Sans, sans-serif;
+            font-size: 24px;
+        }
+
+        body {
+            width: 800px;
+            margin-top: 80px;
+            margin-left: 100px;
+        }
+
+        table {
+            border-collapse: separate;
+        }
+
+        td {
+            border: 1px solid black;
+            padding: 5px;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+
+        th,
+        td {
+            text-align: center;
+        }
+
+        th {
+            text-transform: uppercase;
+            font-size: 18px;
+        }
+
+        input {
+            border: 1px solid black;
+            margin: 0px;
+            margin-right: -2px;
+            margin-left: -2px;
+            padding: 0px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            text-align: center;
+        }
+
+        input:disabled {
+            background: #eeeeee;
+            border: 1px solid #eeeeee;
+        }
+
+        input#submit {
+            margin-top: 4px;
+            background: #dfdfdf;
+            text-transform: uppercase;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 12px;
+        }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.1.1/d3.min.js"></script>
+    <script src="interactive-blockchain.js"></script>
+</head>
+
+<body>
+    <table class="objecttable">
+        <thead>
+            <tr>
+                <th id="index">#</th>
+                <th id="timestamp">Timestamp</th>
+                <th id="data">Data</th>
+                <th id="prevHash">Prev. Hash</th>
+                <th id="hash">Hash</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <br>
+    <form id="newblockdata">
+        <input type="text" id="index" type="number" disabled>
+        <input type="text" id="timestamp" type="date">
+        <input type="text" id="data" type="number">
+        <input type="text" id="prevHash" disabled>
+        <input type="text" id="hash" disabled>
+    </form>
+    <form>
+        <input type="button" id="submit" value="Create Block">
+    </form>
+
+
+    <script>
+        function generateChain() {
+            let myCoin = new Blockchain();
+            myCoin.addBlock(new Block(1, "1/11/2021", 4));
+            myCoin.addBlock(new Block(2, "1/12/2021", 14));
+            myCoin.addBlock(new Block(3, "3/4/2021", 1));
+            myCoin.addBlock(new Block(4, "8/27/2021", 100));
+            return myCoin;
+        }
+        myChain = generateChain();
+
+        function trunc(data, val = 8) {
+            let str = data.toString();
+            if (str.indexOf("/") !== -1) {
+                return str;
+            } // don't concat dates
+
+            if (str.length > val) {
+                return str.slice(0, val) + "..."; //TODO vs substr
+            } else {
+                return str;
+            }
+        }
+        
+        var tr = d3.select(".objecttable tbody")
+            .selectAll("tr")
+            .data(myChain.chain, function(d) { return d.hash; })
+            .enter().append("tr");
+        var td = tr.selectAll("td")
+            .data(function(d, i) { return Object.values(d); })
+            .enter().append("td")
+            .text(function(d) { return trunc(d); });
+
+        let currentBlock = new Block(myChain.chain.length, "10/10/2021", Math.floor(Math.random()*100),
+            myChain.getLatestBlock().hash);
+
+        $("input#index").css("max-width", $("th#index").width() + "px");
+        $("input#timestamp").css("max-width", $("th#timestamp").width() + "px");
+        $("input#data").css("max-width", $("th#data").width() + "px");
+        $("input#prevHash").css("max-width", $("th#prevHash").width() + "px");
+        $("input#hash").css("max-width", $("th#hash").width() + "px");
+
+        function updateForm() {
+            $("input#index").val(currentBlock.index);
+            $("input#timestamp").val(currentBlock.timestamp);
+            $("input#data").val(currentBlock.data);
+            $("input#prevHash").val(trunc(currentBlock.previousHash));
+            $("input#hash").val(trunc(currentBlock.calculateHash()));
+        }
+        updateForm();
+
+        $("input#data").on('input', function() {
+            currentBlock.data = $(this).val();
+            updateForm();
+        });
+        $("input#timestamp").on('input', function() {
+            currentBlock.timestamp = $(this).val();
+            updateForm();
+        });
+
+        function calcSubmitButtonWidth() {
+            return $(".objecttable tbody").width() + 6;
+            /*return $("th#index").width() +
+                   $("th#timestamp").width() +
+                   $("th#data").width() +
+                   $("th#prevHash").width() +
+                   $("th#hash").width() +
+                   4 * 6;*/
+        }
+        $("input#submit").css("width", calcSubmitButtonWidth() + "px");
+
+
+        $("input#submit").on('click', function() {
+            myChain.addBlock(currentBlock);
+            
+            // Update table
+            let newTr = d3.select(".objecttable tbody")
+                .selectAll("tr")
+                .data(myChain.chain, function(d) { return d.hash; })
+                .enter().append("tr");
+            let newTd = newTr.selectAll("td")
+                .data(function(d, i) { return Object.values(d); })
+                .enter().append("td")
+                .text(function(d) { return trunc(d); });
+            
+            // Set up new block
+            currentBlock = new Block(myChain.chain.length, "10/10/2021", Math.floor(Math.random()*100),
+                myChain.getLatestBlock().hash);
+            updateForm();
+        });
+
+        /* Currency of the Crypts: How Blockchain is Killing Our Planet */
+    </script>
+</body>
