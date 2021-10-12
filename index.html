@@ -86,11 +86,11 @@ html, body {
         td.str, td.op {
             padding-left: 10px;
             padding-right: 10px;
-            font-size: 22px; 
+            font-size: 26px; 
             border: none; 
         }
         td.str {
-            background: #ccddff;
+            background: #cceeff;
         }
         td.op {
             font-weight: 600;
@@ -203,7 +203,7 @@ html, body {
             .selectAll("tr")
                 .style("background", function(d) {
                 if (selectedBlock && selectedBlock.hash === d.hash) {
-                    return "#ffffaa";
+                    return "#cceeff";
                 }
                 else {
                     return "#ffffff";
@@ -213,9 +213,9 @@ html, body {
             //TODO redo this in a way more d3-ish way
             $("td#h-index").text(selectedBlock.index);
             $("td#h-timestamp").text(selectedBlock.timestamp);
-            $("td#h-data").text(selectedBlock.data);
-            $("td#h-previousHash").text(trunc(selectedBlock.previousHash,5));
-            $("td#h-hash").text(trunc(selectedBlock.hash, 5));
+            $("td#h-data").text(trunc(selectedBlock.data,3));
+            $("td#h-previousHash").text(trunc(selectedBlock.previousHash,4));
+            $("td#h-hash").text(trunc(selectedBlock.hash, 4));
         }
         
         function makeTable() {
